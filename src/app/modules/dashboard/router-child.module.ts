@@ -6,6 +6,7 @@ import { HomeComponent } from './components/home/home.component';
 
 export const childRoutes: Routes = [
     { path: '', component: HomeComponent },
+    { path: 'home', component: HomeComponent },
     { path: 'path', component: HomeComponent },
     { path: 'category', component: CategoryComponent},
     { path: 'product', component: ProductComponent}
