@@ -1,7 +1,10 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
+import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
 import { MatTableDataSource } from '@angular/material/table';
 import { ProductService } from '../../shared/services/product.service';
+import { NewProductComponent } from '../new-product/new-product.component';
 
 @Component({
   selector: 'app-product',
@@ -10,51 +13,92 @@ import { ProductService } from '../../shared/services/product.service';
 })
 export class ProductComponent implements OnInit {
 
-  constructor(private productService: ProductService) { }
+  constructor(private productService: ProductService,  public dialog: MatDialog,
+    private snackBar: MatSnackBar) { }
 
   ngOnInit(): void {
+    this.getProducts();
   }
 
-  displayedColumns: string[] = ['id', 'name', 'price', 'account', 'category', 'picture', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'price', 'account', 'category', 'picture',  'actions'];
   dataSource = new MatTableDataSource<ProductElement>();
 
   @ViewChild(MatPaginator)
   paginator!: MatPaginator;
 
   getProducts(){
-
     this.productService.getProducts()
         .subscribe( (data:any) => {
-          console.log("respuesta productos :", data);
+          console.log("respuesta de productos: ", data);
           this.processProductResponse(data);
         }, (error: any) => {
-          console.log("error: ", error);
-        })
+          console.log("error en productos: ", error);
+        }) 
   }
 
   processProductResponse(resp: any){
-
     const dateProduct: ProductElement[] = [];
+     if( resp.metadata[0].code == "00"){
+       let listCProduct = resp.product.products;
 
-    if(resp.metadata[0].code = "00"){
+       listCProduct.forEach((element: ProductElement) => {
+         //element.category = element.category.name;
+         element.picture = 'data:image/jpeg;base64,'+element.picture;
+         dateProduct.push(element);
+       });
+
+       //set the datasource
+       this.dataSource = new MatTableDataSource<ProductElement>(dateProduct);
+       this.dataSource.paginator = this.paginator;
+     }
+  }
+
+  openProductDialog(){
+    const dialogRef = this.dialog.open( NewProductComponent , {
+      width: '450px'
+    });
+
+    dialogRef.afterClosed().subscribe((result:any) => {
       
-      let listProduct = resp.product.products;
+      if(result == 1){
+        this.openSnackBar("Producto Agregado", "Exitosa");
+        this.getProducts();
+      } else if (result == 2){
+        this.openSnackBar("Se produjo un error al guardar el producto", "Error")
+      }
 
-      listProduct.forEach((element: ProductElement) => {
-        element.category = element.category.name;
-        element.picture = 'data:image/jpeg;base64,'+element.picture;
-        dateProduct.push(element)
-      });
+    });
+  }
 
-      this.dataSource = new MatTableDataSource<ProductElement>(dateProduct);
-      this.dataSource.paginator = this.paginator;
-    }
+  openSnackBar(message: string, action: string): MatSnackBarRef<SimpleSnackBar>{
 
+    return this.snackBar.open(message, action, {
+      duration: 2000
+    })
+  }
+
+  edit(id: number, name: string, price: number, account: number, category: any){
+
+    const dialogRef = this.dialog.open( NewProductComponent , {
+      width: '450px',
+      data: {id: id, name: name, price: price, account: account, category: category}
+    });
+
+    dialogRef.afterClosed().subscribe((result:any) => {
+      
+      if(result == 1){
+        this.openSnackBar("Producto Editado", "Exitosa");
+        this.getProducts();
+      } else if (result == 2){
+        this.openSnackBar("Se produjo un error al editar el producto", "Error")
+      }
+
+    });
   }
 
 }
 
-export interface ProductElement{
+export interface ProductElement {
   id: number;
   name: string;
   price: number;
