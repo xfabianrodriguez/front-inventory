@@ -10,11 +10,11 @@ const base_url = environment.base_url;
 export class CategoryService { 
 
   constructor(private http: HttpClient) { }
+
   /**
    * get all categories 
    */
   getCategories(){
-    
     const endpoint = `${base_url}/categories`;
     return this.http.get(endpoint);
   }
